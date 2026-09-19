@@ -1,57 +1,50 @@
-const availabilityForm = document.getElementById("availabilityForm");
-const availabilityStatus = document.getElementById("availabilityStatus");
-const contactForm = document.getElementById("contact");
-const messageField = document.getElementById("cntmsg");
+document.addEventListener("DOMContentLoaded", () => {
+  const availabilityForm = document.getElementById("availabilityForm");
+  const availabilityStatus = document.getElementById("availabilityStatus");
+  const checkIn = document.getElementById("checkIn");
+  const checkOut = document.getElementById("checkOut");
 
-availabilityForm?.addEventListener("submit", (event) => {
-  event.preventDefault();
+  if (availabilityForm && availabilityStatus && checkIn && checkOut) {
+    const today = new Date().toISOString().split("T")[0];
+    checkIn.min = today;
+    checkOut.min = today;
 
-  const property = document.getElementById("property").value;
-  const checkIn = document.getElementById("checkIn").value;
-  const checkOut = document.getElementById("checkOut").value;
-  const adults = document.getElementById("adults").value;
-  const children = document.getElementById("children").value;
+    checkIn.addEventListener("change", () => {
+      checkOut.min = checkIn.value || today;
+    });
 
-  if (!checkIn || !checkOut) {
-    showStatus(availabilityStatus, "Please choose both check-in and check-out dates.", false);
-    return;
+    availabilityForm.addEventListener("submit", (event) => {
+      event.preventDefault();
+
+      if (!checkIn.value || !checkOut.value) {
+        availabilityStatus.textContent = "Please select both check-in and check-out dates.";
+        availabilityStatus.className = "mt-4 text-sm text-red-600";
+        return;
+      }
+
+      if (checkOut.value <= checkIn.value) {
+        availabilityStatus.textContent = "Check-out must be after check-in.";
+        availabilityStatus.className = "mt-4 text-sm text-red-600";
+        return;
+      }
+
+      availabilityStatus.textContent = "Thanks. We will confirm availability with you shortly.";
+      availabilityStatus.className = "mt-4 text-sm text-green-700";
+    });
   }
 
-  if (new Date(checkOut) <= new Date(checkIn)) {
-    showStatus(availabilityStatus, "Check-out must be after check-in.", false);
-    return;
-  }
+  document.querySelectorAll(".newsletter-form").forEach((form) => {
+    const status = form.parentElement?.querySelector(".newsletter-status");
 
-  messageField.value = [
-    `Property: ${property}`,
-    `Check-in: ${checkIn}`,
-    `Check-out: ${checkOut}`,
-    `Adults: ${adults}`,
-    `Children: ${children}`,
-    `Submitted: ${new Date().toLocaleString("en-ZM", { timeZone: "Africa/Harare" })}`,
-  ].join("\n");
+    form.addEventListener("submit", (event) => {
+      event.preventDefault();
 
-  showStatus(availabilityStatus, "Dates received. Review the message below to complete your inquiry.", true);
-  contactForm?.scrollIntoView({ behavior: "smooth" });
-});
+      if (status) {
+        status.textContent = "Thanks for subscribing to our newsletter.";
+        status.className = "newsletter-status mt-2 text-sm text-green-700";
+      }
 
-document.querySelectorAll(".newsletter-form").forEach((form) => {
-  form.addEventListener("submit", (event) => {
-    event.preventDefault();
-
-    const email = new FormData(form).get("email");
-    const status = form.nextElementSibling;
-
-    localStorage.setItem("dombaNewsletterEmail", email);
-    form.reset();
-    showStatus(status, "Thanks for subscribing. We will keep you updated.", true);
+      form.reset();
+    });
   });
 });
-
-function showStatus(element, message, success) {
-  if (!element) return;
-
-  element.textContent = message;
-  element.classList.toggle("text-green-700", success);
-  element.classList.toggle("text-red-700", !success);
-}
